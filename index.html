@@ -28,14 +28,14 @@
     -webkit-font-smoothing: antialiased;
   }
   header {
-    max-width: 1040px;
+    max-width: 1100px;
     margin: 0 auto;
     padding: 56px 24px 28px;
   }
   header h1 { margin: 0; font-size: 24px; font-weight: 600; letter-spacing: -0.02em; }
   header p { margin: 8px 0 0; color: var(--muted); font-size: 14px; }
   .wrap {
-    max-width: 1040px;
+    max-width: 1100px;
     margin: 0 auto;
     display: grid;
     grid-template-columns: 340px 1fr;
@@ -43,13 +43,14 @@
     padding: 8px 24px 80px;
     align-items: start;
   }
-  @media (max-width: 860px) { .wrap { grid-template-columns: 1fr; } }
+  @media (max-width: 900px) { .wrap { grid-template-columns: 1fr; } }
   .card {
     background: var(--panel);
     border: 1px solid var(--border);
     border-radius: 14px;
     padding: 24px;
   }
+  .card + .card { margin-top: 20px; }
   .card h2 {
     margin: 0 0 18px;
     font-size: 12px;
@@ -98,23 +99,27 @@
   .verdict.warn { background: #fffbeb; color: var(--warn); border-color: #fde68a; }
   .verdict small { display: block; font-weight: 400; margin-top: 8px; color: var(--text); line-height: 1.7; }
   .verdict small b { font-weight: 600; }
-  table { border-collapse: collapse; font-size: 12px; width: 100%; font-variant-numeric: tabular-nums; }
-  th, td { border: 1px solid var(--border); padding: 6px 8px; text-align: center; }
-  th { background: var(--panel-2); color: var(--muted); font-weight: 600; }
+  .tablewrap { overflow: auto; max-height: 560px; border: 1px solid var(--border); border-radius: 10px; }
+  table { border-collapse: collapse; font-size: 11px; width: 100%; font-variant-numeric: tabular-nums; }
+  th, td { border: 1px solid var(--border); padding: 5px 7px; text-align: center; white-space: nowrap; }
+  thead th { background: var(--panel-2); color: var(--muted); font-weight: 600; position: sticky; top: 0; z-index: 2; }
   td { color: #52525b; }
-  td.rowhead { background: var(--panel-2); color: var(--muted); font-weight: 600; }
-  td.hit { background: #18181b; color: #fff; font-weight: 700; border-color: #18181b; }
-  tr.activerow td.rowhead { color: #fff; background: #18181b; border-color: #18181b; }
+  td.rowhead, th.corner { background: var(--panel-2); color: var(--muted); font-weight: 600; position: sticky; left: 0; z-index: 1; }
+  th.corner { z-index: 3; }
+  thead th:first-child { left: 0; z-index: 4; }
+  td.empty { background: #fcfcfc; }
+  td.hit { background: #18181b !important; color: #fff; font-weight: 700; border-color: #18181b; }
   tr.activerow td { background: #f4f4f5; color: var(--text); }
-  tr.activerow td.hit { background: #18181b; color: #fff; }
-  .tablewrap { overflow-x: auto; }
+  tr.activerow td.rowhead { background: #18181b; color: #fff; border-color: #18181b; }
   .caption { font-size: 12px; color: var(--muted); margin: 0 0 14px; }
+  .footnotes { font-size: 12px; color: var(--muted); margin: 14px 0 0; padding-left: 18px; }
+  .footnotes li { margin: 4px 0; }
 </style>
 </head>
 <body>
 <header>
   <h1>Rudder Balance Calculator</h1>
-  <p>Rudder Balance Procedure — moment hesaplama ve limit kontrolü</p>
+  <p>Rudder Assembly 173A0100 / 173A0103 — Rudder Balance Procedure</p>
 </header>
 
 <div class="wrap">
@@ -122,7 +127,7 @@
   <div class="card">
     <h2>Kullanıcı Girişleri</h2>
 
-    <label for="staticBalance">Static Balance Değeri</label>
+    <label for="staticBalance">Static Balance Değeri (lbf·in)</label>
     <input type="number" id="staticBalance" step="any" placeholder="örn. 480" />
 
     <label for="lhWeight">LH Adjust Weight (Ea)</label>
@@ -145,44 +150,80 @@
       <div class="row"><span>Decal momenti (Decal weight × 17.4")</span><span id="rDecalMoment">—</span></div>
       <div class="row"><span>Static Balance Değeri</span><span id="rStatic">—</span></div>
       <div class="row"><span>Total moment</span><span id="rTotal">—</span></div>
+      <div class="row"><span>Mevcut adjust weight (LH + RH)</span><span id="rExisting">—</span></div>
       <div class="row"><span>Limit aralığı</span><span>+418.2 … +540.0</span></div>
       <div id="verdict" class="verdict warn">Değerleri girip "Hesapla"ya basın.</div>
     </div>
 
-    <div class="card" style="margin-top:20px;">
-      <h2>TABLE I — Weight Balance Seçimi</h2>
-      <p class="caption">Satır = LH + RH (toplam adjust weight). Gerekli moment düşüşü için soldan ilk yeterli sütun seçilir.</p>
+    <div class="card">
+      <h2>TABLE I — ΔM (eklenen ağırlığa göre moment düşüşü)</h2>
+      <p class="caption">Satır = mevcut ağırlık (LH+RH). Sütun (n) = eklenecek 173A5300-1 adet. Hücre = moment düşüşü (lbf·in). Geçerli hücre: mevcut + eklenen ≤ 48.</p>
       <div class="tablewrap"><table id="balTable"></table></div>
+      <ul class="footnotes">
+        <li>Tüm moment değişimleri (ΔM) negatiftir — ağırlık eklemek momenti düşürür.</li>
+        <li>Ağırlıkların montaj konumu için Figure 4'e bakınız.</li>
+        <li>lbf·in → Nm dönüşümü: × 0.1129848.</li>
+      </ul>
     </div>
   </div>
 </div>
 
 <script>
-// TABLE I — rows 0..21 (NUMBER OF = LH+RH), columns 12..22 (weight balance), cells = moment reduction
-const COLS = [12,13,14,15,16,17,18,19,20,21,22];
+// ===== TABLE I =====
+// Row index = NUMBER OF EXISTING WEIGHTS (LH+RH), 0..47
+// Column (n) = NUMBER OF ADJUST WEIGHTS TO BE ADDED, 1..48 (1-based)
+// Cell value  = |ΔM| moment reduction (lbf.in). ΔM is negative (reduces moment).
+// A cell exists only when existing + n <= 48 (triangular).
+const MAX_TOTAL = 48;
 const TABLE = [
-  [53.62,58.01,62.40,66.76,71.12,75.46,79.80,84.12,88.44,92.73,97.02],
-  [53.48,57.87,62.23,66.59,70.93,75.27,79.59,83.91,88.20,92.49,96.76],
-  [53.34,57.70,62.06,66.40,70.74,75.06,79.38,83.67,87.96,92.23,96.50],
-  [53.20,57.56,61.90,66.24,70.56,74.88,79.17,83.46,87.73,92.00,96.24],
-  [53.06,57.40,61.74,66.06,70.38,74.67,78.96,83.23,87.50,91.74,95.98],
-  [52.92,57.26,61.58,65.90,70.19,74.48,78.75,83.02,87.26,91.50,95.72],
-  [52.78,57.10,61.42,65.71,70.00,74.27,78.54,82.78,87.02,91.24,95.46],
-  [52.64,56.96,61.25,65.54,69.81,74.08,78.32,82.56,86.78,91.00,95.20],
-  [52.50,56.79,61.08,65.35,69.62,73.86,78.10,82.32,86.54,90.74,94.94],
-  [52.36,56.65,60.92,65.19,69.43,73.67,77.89,82.11,86.31,90.51,94.68],
-  [52.22,56.49,60.76,65.00,69.24,73.46,77.68,81.88,86.08,90.25,94.42],
-  [52.08,56.35,60.59,64.83,69.05,73.27,77.47,81.67,85.84,90.01,94.16],
-  [51.94,56.18,60.42,64.64,68.86,73.06,77.26,81.43,85.60,89.75,93.90],
-  [51.79,56.03,60.25,64.47,68.67,72.87,77.04,81.21,85.36,89.51,93.64],
-  [51.64,55.86,60.08,64.28,68.48,72.65,76.82,80.97,85.12,89.25,93.38],
-  [51.50,55.72,59.92,64.12,68.29,72.46,76.61,80.76,84.89,89.02,93.12],
-  [51.36,55.56,59.76,63.93,68.10,72.25,76.40,80.53,84.66,88.76,92.86],
-  [51.22,55.42,59.59,63.76,67.91,72.06,76.19,80.32,84.42,88.52,92.60],
-  [51.08,55.25,59.42,63.57,67.72,71.85,75.98,80.08,84.18,88.26,92.34],
-  [50.93,55.10,59.25,63.40,67.53,71.66,75.76,79.86,83.94,88.02,92.08],
-  [50.78,54.93,59.08,63.21,67.34,71.44,75.54,79.62,83.70,87.76,91.82],
-  [50.64,54.79,58.92,63.05,67.15,71.25,75.33,79.41,83.47,87.53,91.56],
+  [4.53,9.06,13.56,18.06,22.54,27.02,31.48,35.94,40.37,44.80,49.21,53.62,58.01,62.40,66.76,71.12,75.46,79.80,84.12,88.44,92.73,97.02,101.29,105.56,109.80,114.04,118.26,122.48,126.68,130.88,135.05,139.22,143.37,147.52,151.65,155.78,159.88,163.98,168.06,172.14,176.20,180.26,184.29,188.32,192.33,196.34,200.33,204.32],
+  [4.53,9.03,13.53,18.01,22.49,26.95,31.41,35.84,40.27,44.68,49.09,53.48,57.87,62.23,66.59,70.93,75.27,79.59,83.91,88.20,92.49,96.76,101.03,105.27,109.51,113.73,117.95,122.15,126.35,130.52,134.69,138.84,142.99,147.12,151.25,155.35,159.45,163.53,167.61,171.67,175.73,179.76,183.79,187.80,191.81,195.80,199.79],
+  [4.50,9.00,13.48,17.96,22.42,26.88,31.31,35.74,40.15,44.56,48.95,53.34,57.70,62.06,66.40,70.74,75.06,79.38,83.67,87.96,92.23,96.50,100.74,104.98,109.20,113.42,117.62,121.82,125.99,130.16,134.31,138.46,142.59,146.72,150.82,154.92,159.00,163.08,167.14,171.20,175.23,179.26,183.27,187.28,191.27,195.26],
+  [4.50,8.98,13.46,17.92,22.38,26.81,31.24,35.65,40.06,44.45,48.84,53.20,57.56,61.90,66.24,70.56,74.88,79.17,83.46,87.73,92.00,96.24,100.48,104.70,108.92,113.12,117.32,121.49,125.66,129.81,133.96,138.09,142.22,146.32,150.42,154.50,158.58,162.64,166.70,170.73,174.76,178.77,182.78,186.77,190.76],
+  [4.48,8.96,13.42,17.88,22.31,26.74,31.15,35.56,39.95,44.34,48.70,53.06,57.40,61.74,66.06,70.38,74.67,78.96,83.23,87.50,91.74,95.98,100.20,104.42,108.62,112.82,116.99,121.16,125.31,129.46,133.59,137.72,141.82,145.92,150.00,154.08,158.14,162.20,166.23,170.26,174.27,178.28,182.27,186.26],
+  [4.48,8.94,13.40,17.83,22.26,26.67,31.08,35.47,39.86,44.22,48.58,52.92,57.26,61.58,65.90,70.19,74.48,78.75,83.02,87.26,91.50,95.72,99.94,104.14,108.34,112.51,116.68,120.83,124.98,129.11,133.24,137.34,141.44,145.52,149.60,153.66,157.72,161.75,165.78,169.79,173.80,177.79,181.78],
+  [4.46,8.92,13.35,17.78,22.19,26.60,30.99,35.38,39.74,44.10,48.44,52.78,57.10,61.42,65.71,70.00,74.27,78.54,82.78,87.02,91.24,95.46,99.66,103.86,108.03,112.20,116.35,120.50,124.63,128.76,132.86,136.96,141.04,145.12,149.18,153.24,157.27,161.30,165.31,169.32,173.31,177.30],
+  [4.46,8.89,13.32,17.73,22.14,26.53,30.92,35.28,39.64,43.98,48.32,52.64,56.96,61.25,65.54,69.81,74.08,78.32,82.56,86.78,91.00,95.20,99.40,103.57,107.74,111.89,116.04,120.17,124.30,128.40,132.50,136.58,140.66,144.72,148.78,152.81,156.84,160.85,164.86,168.85,172.84],
+  [4.43,8.86,13.27,17.68,22.07,26.46,30.82,35.18,39.52,43.86,48.18,52.50,56.79,61.08,65.35,69.62,73.86,78.10,82.32,86.54,90.74,94.94,99.11,103.28,107.43,111.58,115.71,119.84,123.94,128.04,132.12,136.20,140.26,144.32,148.35,152.38,156.39,160.40,164.39,168.38],
+  [4.43,8.84,13.25,17.64,22.03,26.39,30.75,35.09,39.43,43.75,48.07,52.36,56.65,60.92,65.19,69.43,73.67,77.89,82.11,86.31,90.51,94.68,98.85,103.00,107.15,111.28,115.41,119.51,123.61,127.69,131.77,135.83,139.89,143.92,147.95,151.96,155.97,159.96,163.95],
+  [4.41,8.82,13.21,17.60,21.96,26.32,30.66,35.00,39.32,43.64,47.93,52.22,56.49,60.76,65.00,69.24,73.46,77.68,81.88,86.08,90.25,94.42,98.57,102.72,106.85,110.98,115.08,119.18,123.26,127.34,131.40,135.46,139.49,143.52,147.53,151.54,155.53,159.52],
+  [4.41,8.80,13.19,17.55,21.91,26.25,30.59,34.91,39.23,43.52,47.81,52.08,56.35,60.59,64.83,69.05,73.27,77.47,81.67,85.84,90.01,94.16,98.31,102.44,106.57,110.67,114.77,118.85,122.93,126.99,131.05,135.08,139.11,143.13,147.13,151.12,155.11],
+  [4.39,8.78,13.14,17.50,21.84,26.18,30.50,34.82,39.11,43.40,47.67,51.94,56.18,60.42,64.64,68.86,73.06,77.26,81.43,85.60,89.75,93.90,98.03,102.16,106.26,110.36,114.44,118.52,122.58,126.64,130.67,134.70,138.71,142.72,146.71,150.70],
+  [4.39,8.75,13.11,17.45,21.79,26.11,30.43,34.72,39.01,43.28,47.55,51.79,56.03,60.25,64.47,68.67,72.87,77.04,81.21,85.36,89.51,93.64,97.77,101.87,105.97,110.05,114.13,118.19,122.25,126.28,130.31,134.32,138.33,142.32,146.31],
+  [4.36,8.72,13.06,17.40,21.72,26.04,30.33,34.62,38.89,43.16,47.40,51.64,55.86,60.08,64.28,68.48,72.65,76.82,80.97,85.12,89.25,93.38,97.48,101.58,105.66,109.74,113.80,117.86,121.89,125.92,129.93,133.94,137.93,141.92],
+  [4.36,8.70,13.04,17.36,21.68,25.97,30.26,34.53,38.80,43.04,47.28,51.50,55.72,59.92,64.12,68.29,72.46,76.61,80.76,84.89,89.02,93.12,97.22,101.30,105.38,109.44,113.50,117.53,121.56,125.57,129.58,133.57,137.56],
+  [4.34,8.68,13.00,17.32,21.61,25.90,30.17,34.44,38.68,42.92,47.14,51.36,55.56,59.76,63.93,68.10,72.25,76.40,80.53,84.66,88.76,92.86,96.94,101.02,105.08,109.13,113.17,117.20,121.21,125.22,129.21,133.20],
+  [4.34,8.66,12.98,17.27,21.56,25.83,30.10,34.34,38.58,42.80,47.02,51.22,55.42,59.59,63.76,67.91,72.06,76.19,80.32,84.42,88.52,92.60,96.68,100.74,104.80,108.83,112.86,116.87,120.88,124.87,128.86],
+  [4.32,8.64,12.93,17.22,21.49,25.76,30.00,34.24,38.46,42.68,46.88,51.08,55.25,59.42,63.57,67.72,71.85,75.98,80.08,84.18,88.26,92.34,96.40,100.46,104.49,108.52,112.53,116.54,120.53,124.52],
+  [4.32,8.61,12.90,17.17,21.44,25.68,29.92,34.13,38.36,42.56,46.76,50.93,55.10,59.25,63.40,67.53,71.66,75.76,79.86,83.94,88.02,92.08,96.14,100.17,104.20,108.21,112.22,116.20,120.20],
+  [4.29,8.58,12.85,17.12,21.36,25.60,29.82,34.04,38.24,42.44,46.61,50.78,54.93,59.08,63.21,67.34,71.44,75.54,79.62,83.70,87.76,91.82,95.85,99.88,103.89,107.90,111.89,115.88],
+  [4.29,8.56,12.83,17.07,21.31,25.53,29.75,33.95,38.15,42.32,46.49,50.64,54.79,58.92,63.05,67.15,71.25,75.33,79.41,83.47,87.53,91.56,95.59,99.60,103.61,107.60,111.59],
+  [4.27,8.54,12.78,17.02,21.24,25.46,29.66,33.86,38.03,42.20,46.35,50.50,54.63,58.76,62.86,66.96,71.04,75.12,79.18,83.24,87.27,91.30,95.31,99.32,103.31,107.30],
+  [4.27,8.51,12.75,16.97,21.19,25.39,29.59,33.76,37.93,42.08,46.23,50.36,54.49,58.59,62.69,66.77,70.85,74.91,78.97,83.00,87.03,91.04,95.05,99.04,103.03],
+  [4.24,8.48,12.70,16.92,21.12,25.32,29.49,33.66,37.81,41.96,46.09,50.22,54.32,58.42,62.50,66.58,70.64,74.70,78.73,82.76,86.77,90.78,94.77,98.76],
+  [4.24,8.46,12.68,16.88,21.08,25.25,29.42,33.57,37.72,41.85,45.98,50.08,54.18,58.26,62.34,66.40,70.46,74.49,78.52,82.53,86.54,90.53,94.52],
+  [4.22,8.44,12.64,16.84,21.01,25.18,29.33,33.48,37.61,41.74,45.84,49.94,54.02,58.10,62.16,66.22,70.25,74.28,78.29,82.30,86.29,90.28],
+  [4.22,8.42,12.62,16.79,20.96,25.11,29.26,33.39,37.52,41.62,45.72,49.80,53.88,57.94,62.00,66.03,70.06,74.07,78.08,82.07,86.06],
+  [4.20,8.40,12.57,16.74,20.89,25.04,29.17,33.30,37.40,41.50,45.58,49.66,53.72,57.78,61.81,65.84,69.85,73.86,77.85,81.84],
+  [4.20,8.37,12.54,16.69,20.84,24.97,29.10,33.20,37.30,41.38,45.46,49.52,53.58,57.61,61.64,65.65,69.66,73.65,77.64],
+  [4.17,8.34,12.49,16.64,20.77,24.90,29.00,33.10,37.18,41.26,45.32,49.38,53.41,57.44,61.45,65.46,69.45,73.44],
+  [4.17,8.32,12.47,16.60,20.73,24.83,28.93,33.01,37.09,41.15,45.21,49.24,53.27,57.28,61.29,65.28,69.27],
+  [4.15,8.30,12.43,16.56,20.66,24.76,28.84,32.92,36.98,41.04,45.07,49.10,53.11,57.12,61.11,65.10],
+  [4.15,8.28,12.41,16.51,20.61,24.69,28.77,32.83,36.89,40.92,44.95,48.96,52.97,56.96,60.95],
+  [4.13,8.26,12.36,16.46,20.54,24.62,28.68,32.74,36.77,40.80,44.81,48.82,52.81,56.80],
+  [4.13,8.23,12.33,16.41,20.49,24.55,28.61,32.64,36.67,40.68,44.69,48.68,52.67],
+  [4.10,8.20,12.28,16.36,20.42,24.48,28.51,32.54,36.55,40.56,44.55,48.54],
+  [4.10,8.18,12.26,16.32,20.38,24.41,28.44,32.45,36.46,40.45,44.44],
+  [4.08,8.16,12.22,16.28,20.31,24.34,28.35,32.36,36.35,40.34],
+  [4.08,8.14,12.20,16.23,20.26,24.27,28.28,32.27,36.26],
+  [4.06,8.12,12.15,16.18,20.19,24.20,28.19,32.18],
+  [4.06,8.09,12.12,16.13,20.14,24.13,28.12],
+  [4.03,8.06,12.07,16.08,20.07,24.06],
+  [4.03,8.04,12.05,16.04,20.03],
+  [4.01,8.02,12.01,16.00],
+  [4.01,8.00,11.99],
+  [3.99,7.98],
+  [3.99],
 ];
 
 const DECAL_ARM = 17.4;   // inch
@@ -190,27 +231,35 @@ const AREA = 14.75;       // m²
 const LIMIT_LOW = 418.2;
 const LIMIT_HIGH = 540.0;
 
-function buildTable(activeRow, hitRow, hitCol) {
-  const t = document.getElementById('balTable');
-  let html = '<tr><th>#</th>' + COLS.map(c => '<th>'+c+'</th>').join('') + '</tr>';
-  TABLE.forEach((rowArr, r) => {
-    const active = (r === activeRow) ? ' class="activerow"' : '';
-    html += '<tr'+active+'><td class="rowhead">'+r+'</td>';
-    rowArr.forEach((v, c) => {
-      const hit = (r === hitRow && c === hitCol) ? ' class="hit"' : '';
-      html += '<td'+hit+'>'+v.toFixed(2)+'</td>';
-    });
-    html += '</tr>';
-  });
-  t.innerHTML = html;
-}
-
 function fmt(n) { return Number.isFinite(n) ? n.toFixed(2) : '—'; }
+
+// Build the full triangular table view; highlight active row & picked cell
+function buildTable(activeRow, hitRow, hitN) {
+  const t = document.getElementById('balTable');
+  let html = '<thead><tr><th class="corner">mevcut \\ n</th>';
+  for (let n = 1; n <= MAX_TOTAL; n++) html += '<th>' + n + '</th>';
+  html += '</tr></thead><tbody>';
+  for (let r = 0; r < TABLE.length; r++) {
+    const active = (r === activeRow) ? ' class="activerow"' : '';
+    html += '<tr' + active + '><td class="rowhead">' + r + '</td>';
+    for (let n = 1; n <= MAX_TOTAL; n++) {
+      const v = TABLE[r][n - 1];
+      if (v === undefined) { html += '<td class="empty"></td>'; continue; }
+      const hit = (r === hitRow && n === hitN) ? ' class="hit"' : '';
+      html += '<td' + hit + '>' + v.toFixed(2) + '</td>';
+    }
+    html += '</tr>';
+  }
+  html += '</tbody>';
+  t.innerHTML = html;
+  const cell = t.querySelector('td.hit') || t.querySelector('tr.activerow');
+  if (cell) cell.scrollIntoView({ block: 'center', inline: 'center' });
+}
 
 document.getElementById('decalWeight').addEventListener('input', e => {
   const v = parseFloat(e.target.value);
   document.getElementById('decalNote').innerHTML =
-    '14.75 m² ile çarpılmış hali: <b>' + (Number.isFinite(v) ? (v*AREA).toFixed(2) : '—') + '</b>';
+    '14.75 m² ile çarpılmış hali: <b>' + (Number.isFinite(v) ? (v * AREA).toFixed(2) : '—') + '</b>';
 });
 
 document.getElementById('calcBtn').addEventListener('click', calculate);
@@ -220,7 +269,6 @@ function calculate() {
   const lh = parseInt(document.getElementById('lhWeight').value, 10);
   const rh = parseInt(document.getElementById('rhWeight').value, 10);
   const decal = parseFloat(document.getElementById('decalWeight').value);
-
   const verdict = document.getElementById('verdict');
 
   if (!Number.isFinite(staticBal) || !Number.isFinite(decal)) {
@@ -232,70 +280,74 @@ function calculate() {
 
   const decalMoment = decal * DECAL_ARM;
   const total = staticBal + decalMoment;
+  const existing = (Number.isFinite(lh) ? lh : 0) + (Number.isFinite(rh) ? rh : 0);
 
   document.getElementById('rDecalMoment').textContent = fmt(decalMoment);
   document.getElementById('rStatic').textContent = fmt(staticBal);
   document.getElementById('rTotal').textContent = fmt(total);
+  document.getElementById('rExisting').textContent = existing;
 
   // Within limits?
   if (total >= LIMIT_LOW && total <= LIMIT_HIGH) {
     verdict.className = 'verdict ok';
     verdict.innerHTML = 'LİMİT İÇİ — OK ✓<small>Total moment ' + fmt(total) +
-      ' aralık [' + LIMIT_LOW + ', ' + LIMIT_HIGH + '] içinde.</small>';
+      ', [' + LIMIT_LOW + ', ' + LIMIT_HIGH + '] aralığında. Ek ağırlık gerekmez.</small>';
     buildTable(-1, -1, -1);
     return;
   }
 
-  // Out of limits
-  const totalW = (Number.isFinite(lh) ? lh : 0) + (Number.isFinite(rh) ? rh : 0);
-
-  if (total > LIMIT_HIGH) {
-    // Need to REDUCE moment. Required reduction = total - LIMIT_HIGH
-    const required = total - LIMIT_HIGH;
-
-    if (totalW < 0 || totalW > 21) {
-      verdict.className = 'verdict bad';
-      verdict.innerHTML = 'LİMİT DIŞI (yüksek) — Total ' + fmt(total) +
-        '<small>LH+RH = ' + totalW + ' tablo satır aralığı (0–21) dışında. Girişleri kontrol edin.</small>';
-      buildTable(-1, -1, -1);
-      return;
-    }
-
-    const rowArr = TABLE[totalW];
-    let pickCol = -1;
-    for (let c = 0; c < rowArr.length; c++) {
-      if (rowArr[c] >= required) { pickCol = c; break; }
-    }
-
-    if (pickCol === -1) {
-      verdict.className = 'verdict bad';
-      verdict.innerHTML = 'LİMİT DIŞI (yüksek) — Total ' + fmt(total) +
-        '<small>Gerekli düşüş ' + fmt(required) + ' bu satırda (LH+RH=' + totalW +
-        ') hiçbir sütunla sağlanamıyor.</small>';
-      buildTable(totalW, -1, -1);
-      return;
-    }
-
-    const reduction = rowArr[pickCol];
-    const newTotal = total - reduction;
-    const inRange = newTotal >= LIMIT_LOW && newTotal <= LIMIT_HIGH;
-
-    verdict.className = inRange ? 'verdict warn' : 'verdict bad';
-    verdict.innerHTML = 'LİMİT DIŞI (yüksek) — Total ' + fmt(total) +
-      '<small>Gerekli düşüş: <b>' + fmt(required) + '</b><br>' +
-      'Satır ' + totalW + ' (LH+RH) → Weight Balance: <b>' + COLS[pickCol] + '</b> (düşüş ' + fmt(reduction) + ')<br>' +
-      'Yeni Total moment: <b>' + fmt(newTotal) + '</b> ' +
-      (inRange ? '— aralık içinde ✓' : '— DİKKAT: aralık dışında!') + '</small>';
-    buildTable(totalW, totalW, pickCol);
+  // Below lower limit: adding weights only reduces moment further (wrong direction)
+  if (total < LIMIT_LOW) {
+    verdict.className = 'verdict bad';
+    verdict.innerHTML = 'LİMİT DIŞI (düşük) — Total ' + fmt(total) +
+      '<small>Moment alt limitin (' + LIMIT_LOW + ') altında. Ağırlık <b>eklemek</b> momenti daha da düşürür; ' +
+      'bu durumda mevcut ağırlık <b>azaltılmalıdır</b>. (Bu tablo yalnızca ağırlık ekleme/azaltma yönünü kapsar.)</small>';
+    buildTable(-1, -1, -1);
     return;
   }
 
-  // total < LIMIT_LOW : need to ADD moment (continuation tables, sheets 3 & 7)
-  verdict.className = 'verdict bad';
-  verdict.innerHTML = 'LİMİT DIŞI (düşük) — Total ' + fmt(total) +
-    '<small>Moment çok düşük (< ' + LIMIT_LOW + '). Bu durum için ağırlık EKLEME tablosu gerekiyor ' +
-    '(devam sayfaları: Sheets 3 ve 7). Bu tablolar eklenince hesaplanacak.</small>';
-  buildTable(-1, -1, -1);
+  // Above upper limit: add weights to REDUCE moment. Required reduction = total - LIMIT_HIGH
+  const required = total - LIMIT_HIGH;
+
+  if (existing < 0 || existing >= TABLE.length) {
+    verdict.className = 'verdict bad';
+    verdict.innerHTML = 'LİMİT DIŞI (yüksek) — Total ' + fmt(total) +
+      '<small>Mevcut ağırlık (LH+RH = ' + existing + ') tablo aralığı (0–' + (TABLE.length - 1) +
+      ') dışında. LH/RH girişlerini kontrol edin.</small>';
+    buildTable(-1, -1, -1);
+    return;
+  }
+
+  const rowArr = TABLE[existing];
+  // Find smallest n (1-based) bringing newTotal <= LIMIT_HIGH (i.e. reduction >= required)
+  let pickN = -1;
+  for (let n = 1; n <= rowArr.length; n++) {
+    if (rowArr[n - 1] >= required) { pickN = n; break; }
+  }
+
+  if (pickN === -1) {
+    const maxRed = rowArr[rowArr.length - 1];
+    verdict.className = 'verdict bad';
+    verdict.innerHTML = 'LİMİT DIŞI (yüksek) — Total ' + fmt(total) +
+      '<small>Gerekli düşüş <b>' + fmt(required) + '</b>, bu satırda eklenebilecek max ağırlıkla ' +
+      '(n=' + rowArr.length + ', düşüş ' + fmt(maxRed) + ') sağlanamıyor. ' +
+      'Mevcut + eklenen ≤ ' + MAX_TOTAL + ' sınırı aşılıyor.</small>';
+    buildTable(existing, -1, -1);
+    return;
+  }
+
+  const reduction = rowArr[pickN - 1];
+  const newTotal = total - reduction;
+  const inRange = newTotal >= LIMIT_LOW && newTotal <= LIMIT_HIGH;
+
+  verdict.className = inRange ? 'verdict ok' : 'verdict warn';
+  verdict.innerHTML = 'LİMİT DIŞI (yüksek) — Total ' + fmt(total) +
+    '<small>Gerekli düşüş: <b>' + fmt(required) + '</b><br>' +
+    'Mevcut ağırlık satırı: <b>' + existing + '</b> → Eklenecek ağırlık (n): <b>' + pickN + ' adet</b> ' +
+    '(173A5300-1)<br>Sağlanan düşüş: <b>' + fmt(reduction) + '</b> (ΔM = −' + fmt(reduction) + ')<br>' +
+    'Yeni Total moment: <b>' + fmt(newTotal) + '</b> ' +
+    (inRange ? '— aralık içinde ✓' : '— DİKKAT: alt limitin altına düşüyor!') + '</small>';
+  buildTable(existing, existing, pickN);
 }
 
 buildTable(-1, -1, -1);
