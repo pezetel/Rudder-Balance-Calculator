@@ -1,0 +1,284 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Rudder Balance Calculator</title>
+<style>
+  :root {
+    --bg: #0f172a;
+    --panel: #1e293b;
+    --panel-2: #273449;
+    --border: #334155;
+    --text: #e2e8f0;
+    --muted: #94a3b8;
+    --accent: #38bdf8;
+    --ok: #22c55e;
+    --warn: #f59e0b;
+    --bad: #ef4444;
+  }
+  * { box-sizing: border-box; }
+  body {
+    margin: 0;
+    font-family: "Segoe UI", system-ui, sans-serif;
+    background: var(--bg);
+    color: var(--text);
+    line-height: 1.5;
+  }
+  header {
+    padding: 20px 24px;
+    border-bottom: 1px solid var(--border);
+    background: var(--panel);
+  }
+  header h1 { margin: 0; font-size: 20px; }
+  header p { margin: 4px 0 0; color: var(--muted); font-size: 13px; }
+  .wrap {
+    display: grid;
+    grid-template-columns: 360px 1fr;
+    gap: 20px;
+    padding: 20px;
+    align-items: start;
+  }
+  @media (max-width: 860px) { .wrap { grid-template-columns: 1fr; } }
+  .card {
+    background: var(--panel);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    padding: 18px;
+  }
+  .card h2 { margin: 0 0 14px; font-size: 15px; color: var(--accent); }
+  label { display: block; font-size: 13px; margin: 12px 0 4px; color: var(--muted); }
+  input[type="number"] {
+    width: 100%;
+    padding: 9px 10px;
+    background: var(--panel-2);
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    color: var(--text);
+    font-size: 14px;
+  }
+  input:focus { outline: none; border-color: var(--accent); }
+  .note { font-size: 12px; color: var(--muted); margin-top: 4px; }
+  .note b { color: var(--accent); }
+  button {
+    margin-top: 18px;
+    width: 100%;
+    padding: 11px;
+    background: var(--accent);
+    color: #06283d;
+    border: none;
+    border-radius: 6px;
+    font-size: 14px;
+    font-weight: 600;
+    cursor: pointer;
+  }
+  button:hover { filter: brightness(1.08); }
+  .row { display: flex; justify-content: space-between; padding: 6px 0; border-bottom: 1px dashed var(--border); }
+  .row:last-child { border-bottom: none; }
+  .row span:last-child { font-weight: 600; }
+  .verdict { margin-top: 14px; padding: 12px; border-radius: 8px; font-weight: 600; }
+  .verdict.ok { background: rgba(34,197,94,.15); color: var(--ok); border: 1px solid var(--ok); }
+  .verdict.bad { background: rgba(239,68,68,.15); color: var(--bad); border: 1px solid var(--bad); }
+  .verdict.warn { background: rgba(245,158,11,.15); color: var(--warn); border: 1px solid var(--warn); }
+  .verdict small { display: block; font-weight: 400; margin-top: 6px; color: var(--text); }
+  table { border-collapse: collapse; font-size: 12px; width: 100%; }
+  th, td { border: 1px solid var(--border); padding: 4px 6px; text-align: center; }
+  th { background: var(--panel-2); color: var(--accent); }
+  td.rowhead { background: var(--panel-2); color: var(--muted); font-weight: 600; }
+  td.hit { background: rgba(56,189,248,.30); color: #fff; font-weight: 700; }
+  tr.activerow td.rowhead { color: #fff; background: rgba(56,189,248,.20); }
+  .tablewrap { overflow-x: auto; }
+  .caption { font-size: 12px; color: var(--muted); margin: 0 0 10px; }
+</style>
+</head>
+<body>
+<header>
+  <h1>Rudder Balance Calculator</h1>
+  <p>Rudder Balance Procedure — moment hesaplama ve limit kontrolü</p>
+</header>
+
+<div class="wrap">
+  <!-- INPUTS -->
+  <div class="card">
+    <h2>Kullanıcı Girişleri</h2>
+
+    <label for="staticBalance">Static Balance Değeri</label>
+    <input type="number" id="staticBalance" step="any" placeholder="örn. 480" />
+
+    <label for="lhWeight">LH Adjust Weight (Ea)</label>
+    <input type="number" id="lhWeight" step="1" min="0" placeholder="örn. 10" />
+
+    <label for="rhWeight">RH Adjust Weight (Ea)</label>
+    <input type="number" id="rhWeight" step="1" min="0" placeholder="örn. 10" />
+
+    <label for="decalWeight">Decal weight (lb)</label>
+    <input type="number" id="decalWeight" step="any" min="0" placeholder="örn. 0.5" />
+    <div class="note" id="decalNote">14.75 m² ile çarpılmış hali: <b>—</b></div>
+
+    <button id="calcBtn">Hesapla</button>
+  </div>
+
+  <!-- RESULTS -->
+  <div>
+    <div class="card">
+      <h2>Hesaplama Sonucu</h2>
+      <div class="row"><span>Decal momenti (Decal weight × 17.4")</span><span id="rDecalMoment">—</span></div>
+      <div class="row"><span>Static Balance Değeri</span><span id="rStatic">—</span></div>
+      <div class="row"><span>Total moment</span><span id="rTotal">—</span></div>
+      <div class="row"><span>Limit aralığı</span><span>+418.2 … +540.0</span></div>
+      <div id="verdict" class="verdict warn">Değerleri girip "Hesapla"ya basın.</div>
+    </div>
+
+    <div class="card" style="margin-top:20px;">
+      <h2>TABLE I — Weight Balance Seçimi</h2>
+      <p class="caption">Satır = LH + RH (toplam adjust weight). Gerekli moment düşüşü için soldan ilk yeterli sütun seçilir.</p>
+      <div class="tablewrap"><table id="balTable"></table></div>
+    </div>
+  </div>
+</div>
+
+<script>
+// TABLE I — rows 0..21 (NUMBER OF = LH+RH), columns 12..22 (weight balance), cells = moment reduction
+const COLS = [12,13,14,15,16,17,18,19,20,21,22];
+const TABLE = [
+  [53.62,58.01,62.40,66.76,71.12,75.46,79.80,84.12,88.44,92.73,97.02],
+  [53.48,57.87,62.23,66.59,70.93,75.27,79.59,83.91,88.20,92.49,96.76],
+  [53.34,57.70,62.06,66.40,70.74,75.06,79.38,83.67,87.96,92.23,96.50],
+  [53.20,57.56,61.90,66.24,70.56,74.88,79.17,83.46,87.73,92.00,96.24],
+  [53.06,57.40,61.74,66.06,70.38,74.67,78.96,83.23,87.50,91.74,95.98],
+  [52.92,57.26,61.58,65.90,70.19,74.48,78.75,83.02,87.26,91.50,95.72],
+  [52.78,57.10,61.42,65.71,70.00,74.27,78.54,82.78,87.02,91.24,95.46],
+  [52.64,56.96,61.25,65.54,69.81,74.08,78.32,82.56,86.78,91.00,95.20],
+  [52.50,56.79,61.08,65.35,69.62,73.86,78.10,82.32,86.54,90.74,94.94],
+  [52.36,56.65,60.92,65.19,69.43,73.67,77.89,82.11,86.31,90.51,94.68],
+  [52.22,56.49,60.76,65.00,69.24,73.46,77.68,81.88,86.08,90.25,94.42],
+  [52.08,56.35,60.59,64.83,69.05,73.27,77.47,81.67,85.84,90.01,94.16],
+  [51.94,56.18,60.42,64.64,68.86,73.06,77.26,81.43,85.60,89.75,93.90],
+  [51.79,56.03,60.25,64.47,68.67,72.87,77.04,81.21,85.36,89.51,93.64],
+  [51.64,55.86,60.08,64.28,68.48,72.65,76.82,80.97,85.12,89.25,93.38],
+  [51.50,55.72,59.92,64.12,68.29,72.46,76.61,80.76,84.89,89.02,93.12],
+  [51.36,55.56,59.76,63.93,68.10,72.25,76.40,80.53,84.66,88.76,92.86],
+  [51.22,55.42,59.59,63.76,67.91,72.06,76.19,80.32,84.42,88.52,92.60],
+  [51.08,55.25,59.42,63.57,67.72,71.85,75.98,80.08,84.18,88.26,92.34],
+  [50.93,55.10,59.25,63.40,67.53,71.66,75.76,79.86,83.94,88.02,92.08],
+  [50.78,54.93,59.08,63.21,67.34,71.44,75.54,79.62,83.70,87.76,91.82],
+  [50.64,54.79,58.92,63.05,67.15,71.25,75.33,79.41,83.47,87.53,91.56],
+];
+
+const DECAL_ARM = 17.4;   // inch
+const AREA = 14.75;       // m²
+const LIMIT_LOW = 418.2;
+const LIMIT_HIGH = 540.0;
+
+function buildTable(activeRow, hitRow, hitCol) {
+  const t = document.getElementById('balTable');
+  let html = '<tr><th>#</th>' + COLS.map(c => '<th>'+c+'</th>').join('') + '</tr>';
+  TABLE.forEach((rowArr, r) => {
+    const active = (r === activeRow) ? ' class="activerow"' : '';
+    html += '<tr'+active+'><td class="rowhead">'+r+'</td>';
+    rowArr.forEach((v, c) => {
+      const hit = (r === hitRow && c === hitCol) ? ' class="hit"' : '';
+      html += '<td'+hit+'>'+v.toFixed(2)+'</td>';
+    });
+    html += '</tr>';
+  });
+  t.innerHTML = html;
+}
+
+function fmt(n) { return Number.isFinite(n) ? n.toFixed(2) : '—'; }
+
+document.getElementById('decalWeight').addEventListener('input', e => {
+  const v = parseFloat(e.target.value);
+  document.getElementById('decalNote').innerHTML =
+    '14.75 m² ile çarpılmış hali: <b>' + (Number.isFinite(v) ? (v*AREA).toFixed(2) : '—') + '</b>';
+});
+
+document.getElementById('calcBtn').addEventListener('click', calculate);
+
+function calculate() {
+  const staticBal = parseFloat(document.getElementById('staticBalance').value);
+  const lh = parseInt(document.getElementById('lhWeight').value, 10);
+  const rh = parseInt(document.getElementById('rhWeight').value, 10);
+  const decal = parseFloat(document.getElementById('decalWeight').value);
+
+  const verdict = document.getElementById('verdict');
+
+  if (!Number.isFinite(staticBal) || !Number.isFinite(decal)) {
+    verdict.className = 'verdict warn';
+    verdict.textContent = 'Lütfen Static Balance ve Decal weight değerlerini girin.';
+    buildTable(-1, -1, -1);
+    return;
+  }
+
+  const decalMoment = decal * DECAL_ARM;
+  const total = staticBal + decalMoment;
+
+  document.getElementById('rDecalMoment').textContent = fmt(decalMoment);
+  document.getElementById('rStatic').textContent = fmt(staticBal);
+  document.getElementById('rTotal').textContent = fmt(total);
+
+  // Within limits?
+  if (total >= LIMIT_LOW && total <= LIMIT_HIGH) {
+    verdict.className = 'verdict ok';
+    verdict.innerHTML = 'LİMİT İÇİ — OK ✓<small>Total moment ' + fmt(total) +
+      ' aralık [' + LIMIT_LOW + ', ' + LIMIT_HIGH + '] içinde.</small>';
+    buildTable(-1, -1, -1);
+    return;
+  }
+
+  // Out of limits
+  const totalW = (Number.isFinite(lh) ? lh : 0) + (Number.isFinite(rh) ? rh : 0);
+
+  if (total > LIMIT_HIGH) {
+    // Need to REDUCE moment. Required reduction = total - LIMIT_HIGH
+    const required = total - LIMIT_HIGH;
+
+    if (totalW < 0 || totalW > 21) {
+      verdict.className = 'verdict bad';
+      verdict.innerHTML = 'LİMİT DIŞI (yüksek) — Total ' + fmt(total) +
+        '<small>LH+RH = ' + totalW + ' tablo satır aralığı (0–21) dışında. Girişleri kontrol edin.</small>';
+      buildTable(-1, -1, -1);
+      return;
+    }
+
+    const rowArr = TABLE[totalW];
+    let pickCol = -1;
+    for (let c = 0; c < rowArr.length; c++) {
+      if (rowArr[c] >= required) { pickCol = c; break; }
+    }
+
+    if (pickCol === -1) {
+      verdict.className = 'verdict bad';
+      verdict.innerHTML = 'LİMİT DIŞI (yüksek) — Total ' + fmt(total) +
+        '<small>Gerekli düşüş ' + fmt(required) + ' bu satırda (LH+RH=' + totalW +
+        ') hiçbir sütunla sağlanamıyor.</small>';
+      buildTable(totalW, -1, -1);
+      return;
+    }
+
+    const reduction = rowArr[pickCol];
+    const newTotal = total - reduction;
+    const inRange = newTotal >= LIMIT_LOW && newTotal <= LIMIT_HIGH;
+
+    verdict.className = inRange ? 'verdict warn' : 'verdict bad';
+    verdict.innerHTML = 'LİMİT DIŞI (yüksek) — Total ' + fmt(total) +
+      '<small>Gerekli düşüş: <b>' + fmt(required) + '</b><br>' +
+      'Satır ' + totalW + ' (LH+RH) → Weight Balance: <b>' + COLS[pickCol] + '</b> (düşüş ' + fmt(reduction) + ')<br>' +
+      'Yeni Total moment: <b>' + fmt(newTotal) + '</b> ' +
+      (inRange ? '— aralık içinde ✓' : '— DİKKAT: aralık dışında!') + '</small>';
+    buildTable(totalW, totalW, pickCol);
+    return;
+  }
+
+  // total < LIMIT_LOW : need to ADD moment (continuation tables, sheets 3 & 7)
+  verdict.className = 'verdict bad';
+  verdict.innerHTML = 'LİMİT DIŞI (düşük) — Total ' + fmt(total) +
+    '<small>Moment çok düşük (< ' + LIMIT_LOW + '). Bu durum için ağırlık EKLEME tablosu gerekiyor ' +
+    '(devam sayfaları: Sheets 3 ve 7). Bu tablolar eklenince hesaplanacak.</small>';
+  buildTable(-1, -1, -1);
+}
+
+buildTable(-1, -1, -1);
+</script>
+</body>
+</html>
