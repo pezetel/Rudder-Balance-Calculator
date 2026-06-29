@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="tr">
+<html lang="en">
 <head>
 <meta charset="UTF-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1.0" />
@@ -133,45 +133,45 @@
 <div class="wrap">
   <!-- INPUTS -->
   <div class="card">
-    <h2>Kullanıcı Girişleri</h2>
+    <h2>User Inputs</h2>
 
-    <label for="staticBalance">Static Balance Değeri (lbf·in)</label>
-    <input type="number" id="staticBalance" step="any" placeholder="örn. 480" />
+    <label for="staticBalance">Static Balance Value (lbf·in)</label>
+    <input type="number" id="staticBalance" step="any" placeholder="e.g. 480" />
 
     <label for="lhWeight">LH Adjust Weight (Ea)</label>
-    <input type="number" id="lhWeight" step="1" min="0" placeholder="örn. 10" />
+    <input type="number" id="lhWeight" step="1" min="0" placeholder="e.g. 10" />
 
     <label for="rhWeight">RH Adjust Weight (Ea)</label>
-    <input type="number" id="rhWeight" step="1" min="0" placeholder="örn. 10" />
+    <input type="number" id="rhWeight" step="1" min="0" placeholder="e.g. 10" />
 
     <label for="decalWeight">Decal weight (lb)</label>
-    <input type="number" id="decalWeight" step="any" min="0" placeholder="örn. 0.5" />
-    <div class="note" id="decalNote">14.75 m² ile çarpılmış hali: <b>—</b></div>
+    <input type="number" id="decalWeight" step="any" min="0" placeholder="e.g. 0.5" />
+    <div class="note" id="decalNote">Multiplied by 14.75 m²: <b>—</b></div>
 
-    <button id="calcBtn">Hesapla</button>
+    <button id="calcBtn">Calculate</button>
   </div>
 
   <!-- RESULTS -->
   <div>
     <div class="card">
-      <h2>Hesaplama Sonucu</h2>
-      <div class="row"><span>Decal momenti (Decal weight × 17.4")</span><span id="rDecalMoment">—</span></div>
-      <div class="row"><span>Static Balance Değeri</span><span id="rStatic">—</span></div>
+      <h2>Calculation Result</h2>
+      <div class="row"><span>Decal moment (Decal weight × 17.4")</span><span id="rDecalMoment">—</span></div>
+      <div class="row"><span>Static Balance Value</span><span id="rStatic">—</span></div>
       <div class="row"><span>Total moment</span><span id="rTotal">—</span></div>
-      <div class="row"><span>Mevcut adjust weight (LH + RH)</span><span id="rExisting">—</span></div>
-      <div class="row"><span>Limit aralığı</span><span>+418.2 … +540.0</span></div>
-      <div id="verdict" class="verdict warn">Değerleri girip "Hesapla"ya basın.</div>
+      <div class="row"><span>Existing adjust weights (LH + RH)</span><span id="rExisting">—</span></div>
+      <div class="row"><span>Limit range</span><span>+418.2 … +540.0</span></div>
+      <div id="verdict" class="verdict warn">Enter the values and click "Calculate".</div>
     </div>
 
     <div class="card">
-      <h2>TABLE I — ΔM (eklenen ağırlığa göre moment düşüşü)</h2>
-      <p class="caption">Satır = mevcut ağırlık (LH+RH). Sütun (n) = eklenecek 173A5300-1 adet. Hücre = moment düşüşü (lbf·in). Geçerli hücre: mevcut + eklenen ≤ 48.</p>
+      <h2>TABLE I — ΔM (moment reduction by added weights)</h2>
+      <p class="caption">Row = existing weights (LH+RH). Column (n) = number of 173A5300-1 to be added. Cell = moment reduction (lbf·in). Valid cell: existing + added ≤ 48.</p>
       <div class="tablewrap"><table id="balTable"></table></div>
-      <div class="legend"><span class="box"></span> Kırmızı kutu = hesaplama sonucu seçilen hücre (satır = mevcut, sütun = eklenecek n). Açık kırmızı = aynı satır/sütun.</div>
+      <div class="legend"><span class="box"></span> Red box = selected cell from the calculation (row = existing, column = added n). Light red = same row/column.</div>
       <ul class="footnotes">
-        <li>Tüm moment değişimleri (ΔM) negatiftir — ağırlık eklemek momenti düşürür.</li>
-        <li>Ağırlıkların montaj konumu için Figure 4'e bakınız.</li>
-        <li>lbf·in → Nm dönüşümü: × 0.1129848.</li>
+        <li>All moment increments (ΔM) are negative — adding weights reduces the moment.</li>
+        <li>Refer to Figure 4 for the location where the adjust weights must be installed.</li>
+        <li>To convert lbf·in → Nm, multiply by 0.1129848.</li>
       </ul>
     </div>
   </div>
@@ -245,7 +245,7 @@ function fmt(n) { return Number.isFinite(n) ? n.toFixed(2) : '—'; }
 // Build the full triangular table view; highlight active row & picked cell
 function buildTable(activeRow, hitRow, hitN) {
   const t = document.getElementById('balTable');
-  let html = '<thead><tr><th class="corner">mevcut ＼ n</th>';
+  let html = '<thead><tr><th class="corner">existing ＼ n</th>';
   for (let n = 1; n <= MAX_TOTAL; n++)
     html += '<th' + (n === hitN ? ' class="hithead"' : '') + '>' + n + '</th>';
   html += '</tr></thead><tbody>';
@@ -272,7 +272,7 @@ function buildTable(activeRow, hitRow, hitN) {
 document.getElementById('decalWeight').addEventListener('input', e => {
   const v = parseFloat(e.target.value);
   document.getElementById('decalNote').innerHTML =
-    '14.75 m² ile çarpılmış hali: <b>' + (Number.isFinite(v) ? (v * AREA).toFixed(2) : '—') + '</b>';
+    'Multiplied by 14.75 m²: <b>' + (Number.isFinite(v) ? (v * AREA).toFixed(2) : '—') + '</b>';
 });
 
 document.getElementById('calcBtn').addEventListener('click', calculate);
@@ -286,7 +286,7 @@ function calculate() {
 
   if (!Number.isFinite(staticBal) || !Number.isFinite(decal)) {
     verdict.className = 'verdict warn';
-    verdict.textContent = 'Lütfen Static Balance ve Decal weight değerlerini girin.';
+    verdict.textContent = 'Please enter the Static Balance and Decal weight values.';
     buildTable(-1, -1, -1);
     return;
   }
@@ -303,8 +303,8 @@ function calculate() {
   // Within limits?
   if (total >= LIMIT_LOW && total <= LIMIT_HIGH) {
     verdict.className = 'verdict ok';
-    verdict.innerHTML = 'LİMİT İÇİ — OK ✓<small>Total moment ' + fmt(total) +
-      ', [' + LIMIT_LOW + ', ' + LIMIT_HIGH + '] aralığında. Ek ağırlık gerekmez.</small>';
+    verdict.innerHTML = 'WITHIN LIMITS — OK ✓<small>Total moment ' + fmt(total) +
+      ' is within [' + LIMIT_LOW + ', ' + LIMIT_HIGH + ']. No additional weight required.</small>';
     buildTable(-1, -1, -1);
     return;
   }
@@ -312,9 +312,9 @@ function calculate() {
   // Below lower limit: adding weights only reduces moment further (wrong direction)
   if (total < LIMIT_LOW) {
     verdict.className = 'verdict bad';
-    verdict.innerHTML = 'LİMİT DIŞI (düşük) — Total ' + fmt(total) +
-      '<small>Moment alt limitin (' + LIMIT_LOW + ') altında. Ağırlık <b>eklemek</b> momenti daha da düşürür; ' +
-      'bu durumda mevcut ağırlık <b>azaltılmalıdır</b>. (Bu tablo yalnızca ağırlık ekleme/azaltma yönünü kapsar.)</small>';
+    verdict.innerHTML = 'OUT OF LIMITS (low) — Total ' + fmt(total) +
+      '<small>Moment is below the lower limit (' + LIMIT_LOW + '). <b>Adding</b> weight would reduce it further; ' +
+      'in this case existing weight must be <b>removed</b>. (This table only covers the add direction.)</small>';
     buildTable(-1, -1, -1);
     return;
   }
@@ -324,9 +324,9 @@ function calculate() {
 
   if (existing < 0 || existing >= TABLE.length) {
     verdict.className = 'verdict bad';
-    verdict.innerHTML = 'LİMİT DIŞI (yüksek) — Total ' + fmt(total) +
-      '<small>Mevcut ağırlık (LH+RH = ' + existing + ') tablo aralığı (0–' + (TABLE.length - 1) +
-      ') dışında. LH/RH girişlerini kontrol edin.</small>';
+    verdict.innerHTML = 'OUT OF LIMITS (high) — Total ' + fmt(total) +
+      '<small>Existing weight (LH+RH = ' + existing + ') is outside the table range (0–' + (TABLE.length - 1) +
+      '). Check the LH/RH inputs.</small>';
     buildTable(-1, -1, -1);
     return;
   }
@@ -341,10 +341,10 @@ function calculate() {
   if (pickN === -1) {
     const maxRed = rowArr[rowArr.length - 1];
     verdict.className = 'verdict bad';
-    verdict.innerHTML = 'LİMİT DIŞI (yüksek) — Total ' + fmt(total) +
-      '<small>Gerekli düşüş <b>' + fmt(required) + '</b>, bu satırda eklenebilecek max ağırlıkla ' +
-      '(n=' + rowArr.length + ', düşüş ' + fmt(maxRed) + ') sağlanamıyor. ' +
-      'Mevcut + eklenen ≤ ' + MAX_TOTAL + ' sınırı aşılıyor.</small>';
+    verdict.innerHTML = 'OUT OF LIMITS (high) — Total ' + fmt(total) +
+      '<small>Required reduction <b>' + fmt(required) + '</b> cannot be achieved with the max weight addable ' +
+      'in this row (n=' + rowArr.length + ', reduction ' + fmt(maxRed) + '). ' +
+      'The existing + added ≤ ' + MAX_TOTAL + ' limit would be exceeded.</small>';
     buildTable(existing, -1, -1);
     return;
   }
@@ -354,12 +354,12 @@ function calculate() {
   const inRange = newTotal >= LIMIT_LOW && newTotal <= LIMIT_HIGH;
 
   verdict.className = inRange ? 'verdict ok' : 'verdict warn';
-  verdict.innerHTML = 'LİMİT DIŞI (yüksek) — Total ' + fmt(total) +
-    '<small>Gerekli düşüş: <b>' + fmt(required) + '</b><br>' +
-    'Mevcut ağırlık satırı: <b>' + existing + '</b> → Eklenecek ağırlık (n): <b>' + pickN + ' adet</b> ' +
-    '(173A5300-1)<br>Sağlanan düşüş: <b>' + fmt(reduction) + '</b> (ΔM = −' + fmt(reduction) + ')<br>' +
-    'Yeni Total moment: <b>' + fmt(newTotal) + '</b> ' +
-    (inRange ? '— aralık içinde ✓' : '— DİKKAT: alt limitin altına düşüyor!') + '</small>';
+  verdict.innerHTML = 'OUT OF LIMITS (high) — Total ' + fmt(total) +
+    '<small>Required reduction: <b>' + fmt(required) + '</b><br>' +
+    'Existing weight row: <b>' + existing + '</b> → Weight to add (n): <b>' + pickN + ' pcs</b> ' +
+    '(173A5300-1)<br>Reduction achieved: <b>' + fmt(reduction) + '</b> (ΔM = −' + fmt(reduction) + ')<br>' +
+    'New Total moment: <b>' + fmt(newTotal) + '</b> ' +
+    (inRange ? '— within range ✓' : '— WARNING: drops below the lower limit!') + '</small>';
   buildTable(existing, existing, pickN);
 }
 
