@@ -3,9 +3,11 @@
 <head>
 <meta charset="UTF-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<meta name="color-scheme" content="light only" />
 <title>Rudder Balance Calculator</title>
 <style>
   :root {
+    color-scheme: light only;
     --bg: #ffffff;
     --panel: #ffffff;
     --panel-2: #fafafa;
@@ -96,7 +98,7 @@
   .row { display: flex; justify-content: space-between; gap: 16px; padding: 11px 0; border-bottom: 1px solid var(--border); font-size: 14px; }
   .row span:first-child { color: var(--muted); }
   .row:last-child { border-bottom: none; }
-  .row span:last-child { font-weight: 600; font-variant-numeric: tabular-nums; }
+  .row span:last-child { font-weight: 600; font-variant-numeric: tabular-nums; color: #18181b; }
   .verdict { margin-top: 18px; padding: 14px 16px; border-radius: 11px; font-weight: 600; font-size: 14px; border: 1px solid var(--border-strong); background: var(--panel-2); color: var(--text); }
   .verdict.ok { background: #f0fdf4; color: var(--ok); border-color: #bbf7d0; }
   .verdict.bad { background: #fef2f2; color: var(--bad); border-color: #fecaca; }
