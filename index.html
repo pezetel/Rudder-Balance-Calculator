@@ -46,10 +46,14 @@
     align-items: start;
   }
   @media (max-width: 900px) { .wrap { grid-template-columns: 1fr; } }
+  /* Prevent the wide 48-column table from blowing out the grid/flex tracks,
+     which pushed result values off-screen. */
+  .wrap > * { min-width: 0; }
   .card {
     background: var(--panel);
     border: 1px solid var(--border);
     border-radius: 14px;
+    min-width: 0;
     padding: 24px;
   }
   .card + .card { margin-top: 20px; }
