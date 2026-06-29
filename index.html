@@ -89,6 +89,10 @@
     transition: opacity .15s;
   }
   button:hover { opacity: .88; }
+  button:disabled { opacity: .4; cursor: not-allowed; }
+  input.input-err { border-color: #dc2626; box-shadow: 0 0 0 3px rgba(220,38,38,.10); }
+  .errmsg { font-size: 12px; color: #b91c1c; font-weight: 600; margin-top: 8px; display: none; }
+  .errmsg.show { display: block; }
   .row { display: flex; justify-content: space-between; gap: 16px; padding: 11px 0; border-bottom: 1px solid var(--border); font-size: 14px; }
   .row span:first-child { color: var(--muted); }
   .row:last-child { border-bottom: none; }
@@ -143,6 +147,7 @@
 
     <label for="rhWeight">RH Adjust Weight (Ea)</label>
     <input type="number" id="rhWeight" step="1" min="0" placeholder="e.g. 10" />
+    <div class="errmsg" id="balanceErr">LH and RH may differ by at most 1 (|LH − RH| ≤ 1).</div>
 
     <label for="decalWeight">Decal weight (lb)</label>
     <input type="number" id="decalWeight" step="any" min="0" placeholder="e.g. 0.5" />
@@ -277,7 +282,34 @@ document.getElementById('decalWeight').addEventListener('input', e => {
 
 document.getElementById('calcBtn').addEventListener('click', calculate);
 
+const MAX_LR_DIFF = 1; // |LH - RH| must be <= 1 (a difference of 2 or more is not allowed)
+
+// Live validation: LH/RH may differ by at most 1
+function validateWeights() {
+  const lhEl = document.getElementById('lhWeight');
+  const rhEl = document.getElementById('rhWeight');
+  const errEl = document.getElementById('balanceErr');
+  const btn = document.getElementById('calcBtn');
+  const lh = parseInt(lhEl.value, 10);
+  const rh = parseInt(rhEl.value, 10);
+
+  let bad = false;
+  if (Number.isFinite(lh) && Number.isFinite(rh)) {
+    bad = Math.abs(lh - rh) > MAX_LR_DIFF;
+  }
+
+  lhEl.classList.toggle('input-err', bad);
+  rhEl.classList.toggle('input-err', bad);
+  errEl.classList.toggle('show', bad);
+  btn.disabled = bad;
+  return !bad;
+}
+
+document.getElementById('lhWeight').addEventListener('input', validateWeights);
+document.getElementById('rhWeight').addEventListener('input', validateWeights);
+
 function calculate() {
+  if (!validateWeights()) return;
   const staticBal = parseFloat(document.getElementById('staticBalance').value);
   const lh = parseInt(document.getElementById('lhWeight').value, 10);
   const rh = parseInt(document.getElementById('rhWeight').value, 10);
