@@ -111,7 +111,9 @@
   .verdict small { display: block; font-weight: 400; margin-top: 8px; color: var(--text); line-height: 1.7; }
   .verdict small b { font-weight: 600; }
   .tablewrap { overflow: auto; max-height: 620px; border: 1px solid var(--border); border-radius: 10px; }
-  #boltWrap { max-height: none; }
+  #boltWrap { max-height: none; overflow: hidden; }
+  #boltTable { width: 100%; }
+  #boltTable th, #boltTable td { min-width: 0; padding: 8px 4px; }
   table { border-collapse: collapse; width: auto; font-size: 12.5px; font-variant-numeric: tabular-nums; }
   th, td { border: 1px solid var(--border); padding: 7px 10px; text-align: center; white-space: nowrap; min-width: 50px; }
   thead th { background: #f4f4f5; color: var(--muted); font-weight: 600; position: sticky; top: 0; z-index: 2; }
@@ -288,20 +290,17 @@ function computeBolts(exLH, exRH, addTotal) {
 function buildTable2(hiLH, hiRH) {
   const t = document.getElementById('boltTable');
   const sel = s => (s === hiLH || s === hiRH);
+  const sideOf = s => (s === hiLH && s === hiRH) ? ' L/R' : (s === hiLH ? ' L' : (s === hiRH ? ' R' : ''));
   let head = '<thead><tr><th class="corner">Stack-up</th>';
   for (let s = 0; s <= 24; s++)
-    head += '<th' + (sel(s) ? ' class="hithead"' : '') + '>' + s + '</th>';
+    head += '<th' + (sel(s) ? ' class="hithead"' : '') + '>' + s + sideOf(s) + '</th>';
   head += '</tr></thead>';
 
   let rDash = '<tr><td class="rowhead">Dash</td>';
-  let rSide = '<tr><td class="rowhead">Side</td>';
-  for (let s = 0; s <= 24; s++) {
+  for (let s = 0; s <= 24; s++)
     rDash += '<td' + (sel(s) ? ' class="hit"' : '') + '>' + TABLE2[s] + '</td>';
-    const side = (s === hiLH && s === hiRH) ? 'L/R' : (s === hiLH ? 'L' : (s === hiRH ? 'R' : ''));
-    rSide += '<td' + (side ? ' class="colhit"' : '') + '>' + side + '</td>';
-  }
-  rDash += '</tr>'; rSide += '</tr>';
-  t.innerHTML = head + '<tbody>' + rDash + rSide + '</tbody>';
+  rDash += '</tr>';
+  t.innerHTML = head + '<tbody>' + rDash + '</tbody>';
 }
 
 // Build the bolt-PN block for the result panel; also highlights TABLE 2.
