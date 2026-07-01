@@ -111,6 +111,7 @@
   .verdict small { display: block; font-weight: 400; margin-top: 8px; color: var(--text); line-height: 1.7; }
   .verdict small b { font-weight: 600; }
   .tablewrap { overflow: auto; max-height: 620px; border: 1px solid var(--border); border-radius: 10px; }
+  #boltWrap { max-height: none; }
   table { border-collapse: collapse; width: auto; font-size: 12.5px; font-variant-numeric: tabular-nums; }
   th, td { border: 1px solid var(--border); padding: 7px 10px; text-align: center; white-space: nowrap; min-width: 50px; }
   thead th { background: #f4f4f5; color: var(--muted); font-weight: 600; position: sticky; top: 0; z-index: 2; }
@@ -283,22 +284,24 @@ function computeBolts(exLH, exRH, addTotal) {
   };
 }
 
-// Render TABLE 2 and highlight the two selected per-side stack-ups
+// Render TABLE 2 horizontally (like TABLE I) and highlight the two selected stack-ups
 function buildTable2(hiLH, hiRH) {
   const t = document.getElementById('boltTable');
-  let html = '<thead><tr><th>Stack-up</th><th>Dash</th><th>Bolt PN</th></tr></thead><tbody>';
+  const sel = s => (s === hiLH || s === hiRH);
+  let head = '<thead><tr><th class="corner">Stack-up</th>';
+  for (let s = 0; s <= 24; s++)
+    head += '<th' + (sel(s) ? ' class="hithead"' : '') + '>' + s + '</th>';
+  head += '</tr></thead>';
+
+  let rDash = '<tr><td class="rowhead">Dash</td>';
+  let rSide = '<tr><td class="rowhead">Side</td>';
   for (let s = 0; s <= 24; s++) {
-    const dash = TABLE2[s];
-    const sides = [];
-    if (s === hiLH) sides.push('L');
-    if (s === hiRH) sides.push('R');
-    const on = sides.length > 0;
-    html += '<tr' + (on ? ' class="activerow"' : '') + '>' +
-      '<td class="rowhead">' + s + '</td>' +
-      '<td' + (on ? ' class="hit"' : '') + '>' + dash + '</td>' +
-      '<td>' + (on ? BOLT_PREFIX + dash + ' (' + sides.join('/') + ')' : '') + '</td></tr>';
+    rDash += '<td' + (sel(s) ? ' class="hit"' : '') + '>' + TABLE2[s] + '</td>';
+    const side = (s === hiLH && s === hiRH) ? 'L/R' : (s === hiLH ? 'L' : (s === hiRH ? 'R' : ''));
+    rSide += '<td' + (side ? ' class="colhit"' : '') + '>' + side + '</td>';
   }
-  t.innerHTML = html + '</tbody>';
+  rDash += '</tr>'; rSide += '</tr>';
+  t.innerHTML = head + '<tbody>' + rDash + rSide + '</tbody>';
 }
 
 // Build the bolt-PN block for the result panel; also highlights TABLE 2.
