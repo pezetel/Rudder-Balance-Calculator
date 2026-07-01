@@ -192,7 +192,7 @@
 
     <div class="card">
       <h2>TABLE 2 — Attachment Bolt Dash Number (BACB30LE5K—)</h2>
-      <p class="caption">Per-side stack-up (existing + added on that side) → grip length dash number. Bolt PN = BACB30LE5K + dash. L = Left (LH), R = Right (RH).</p>
+      <p class="caption">Per-side stack-up (existing + added on that side) → grip length dash number. Bolt PN = BACB30LE5K + dash. LH = Left, RH = Right.</p>
       <div class="tablewrap" id="boltWrap"><table id="boltTable"></table></div>
     </div>
   </div>
@@ -299,7 +299,7 @@ function buildTable2(hiLH, hiRH) {
   let rSide = '<tr><td class="rowhead">Side</td>';
   for (let s = 0; s <= 24; s++) {
     rDash += '<td' + (sel(s) ? ' class="hit"' : '') + '>' + TABLE2[s] + '</td>';
-    const side = (s === hiLH && s === hiRH) ? 'L/R' : (s === hiLH ? 'L' : (s === hiRH ? 'R' : ''));
+    const side = (s === hiLH && s === hiRH) ? 'LH/RH' : (s === hiLH ? 'LH' : (s === hiRH ? 'RH' : ''));
     rSide += '<td' + (side ? ' class="colhit"' : '') + '>' + side + '</td>';
   }
   rDash += '</tr>'; rSide += '</tr>';
