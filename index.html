@@ -186,6 +186,12 @@
         <li>To convert lbf·in → Nm, multiply by 0.1129848.</li>
       </ul>
     </div>
+
+    <div class="card">
+      <h2>TABLE 2 — Attachment Bolt Dash Number (BACB30LE5K—)</h2>
+      <p class="caption">Per-side stack-up (existing + added on that side) → grip length dash number. Bolt PN = BACB30LE5K + dash. L = Left (LH), R = Right (RH).</p>
+      <div class="tablewrap" id="boltWrap"><table id="boltTable"></table></div>
+    </div>
   </div>
 </div>
 
@@ -252,7 +258,63 @@ const AREA = 14.75;       // m²
 const LIMIT_LOW = 418.2;
 const LIMIT_HIGH = 540.0;
 
+// ===== TABLE 2 =====
+// Per-side stack-up (number of rudder balance adjust weights) -> attachment bolt
+// BACB30LE5K( ) grip length dash number. Bolt PN = BACB30LE5K + dash.
+const BOLT_PREFIX = 'BACB30LE5K';
+const TABLE2 = {0:55,1:57,2:59,3:60,4:62,5:63,6:65,7:67,8:68,9:70,10:71,11:73,12:75,
+  13:76,14:78,15:79,16:81,17:83,18:84,19:86,20:87,21:89,22:91,23:92,24:94};
+
 function fmt(n) { return Number.isFinite(n) ? n.toFixed(2) : '—'; }
+
+// Split "addTotal" added weights across LH/RH keeping the two sides balanced
+// (|LH-RH| <= 1). The side with more existing weight ends up with the higher
+// final count (ties resolved to RH). Existing counts are never reduced.
+function computeBolts(exLH, exRH, addTotal) {
+  const big = exLH + exRH + addTotal;
+  const lo = Math.floor(big / 2), hi = Math.ceil(big / 2);
+  let finalLH, finalRH;
+  if (exRH >= exLH) { finalRH = hi; finalLH = lo; } else { finalLH = hi; finalRH = lo; }
+  const dashLH = TABLE2[finalLH], dashRH = TABLE2[finalRH];
+  return {
+    addLH: finalLH - exLH, addRH: finalRH - exRH, finalLH, finalRH, dashLH, dashRH,
+    pnLH: dashLH !== undefined ? BOLT_PREFIX + dashLH : null,
+    pnRH: dashRH !== undefined ? BOLT_PREFIX + dashRH : null,
+  };
+}
+
+// Render TABLE 2 and highlight the two selected per-side stack-ups
+function buildTable2(hiLH, hiRH) {
+  const t = document.getElementById('boltTable');
+  let html = '<thead><tr><th>Stack-up</th><th>Dash</th><th>Bolt PN</th></tr></thead><tbody>';
+  for (let s = 0; s <= 24; s++) {
+    const dash = TABLE2[s];
+    const sides = [];
+    if (s === hiLH) sides.push('L');
+    if (s === hiRH) sides.push('R');
+    const on = sides.length > 0;
+    html += '<tr' + (on ? ' class="activerow"' : '') + '>' +
+      '<td class="rowhead">' + s + '</td>' +
+      '<td' + (on ? ' class="hit"' : '') + '>' + dash + '</td>' +
+      '<td>' + (on ? BOLT_PREFIX + dash + ' (' + sides.join('/') + ')' : '') + '</td></tr>';
+  }
+  t.innerHTML = html + '</tbody>';
+}
+
+// Build the bolt-PN block for the result panel; also highlights TABLE 2.
+function boltInfoHTML(lh, rh, addTotal) {
+  if (!Number.isFinite(lh) || !Number.isFinite(rh)) {
+    buildTable2(-1, -1);
+    return '<br><br>Enter LH and RH separately to determine the bolt PN.';
+  }
+  const b = computeBolts(lh, rh, addTotal);
+  buildTable2(b.finalLH, b.finalRH);
+  const line = (label, add, fin, pn) =>
+    label + ': +' + add + ' → stack-up <b>' + fin + '</b> → <b>' + (pn || 'out of Table 2 (>24)') + '</b>';
+  return '<br><br><b>Bolt PN (BACB30LE5K—)</b><br>' +
+    line('Left (LH)', b.addLH, b.finalLH, b.pnLH) + '<br>' +
+    line('Right (RH)', b.addRH, b.finalRH, b.pnRH);
+}
 
 // Build the full triangular table view; highlight active row & picked cell
 function buildTable(activeRow, hitRow, hitN) {
@@ -338,6 +400,7 @@ function calculate() {
   document.getElementById('rStatic').textContent = fmt(staticBal);
   document.getElementById('rTotal').textContent = fmt(total);
   document.getElementById('rExisting').textContent = existing;
+  buildTable2(-1, -1); // reset bolt table; the add case re-highlights it
 
   // Within limits?
   if (total >= LIMIT_LOW && total <= LIMIT_HIGH) {
@@ -398,11 +461,13 @@ function calculate() {
     'Existing weight row: <b>' + existing + '</b> → Weight to add (n): <b>' + pickN + ' pcs</b> ' +
     '(173A5300-1)<br>Reduction achieved: <b>' + fmt(reduction) + '</b> (ΔM = −' + fmt(reduction) + ')<br>' +
     'New Total moment: <b>' + fmt(newTotal) + '</b> ' +
-    (inRange ? '— within range ✓' : '— WARNING: drops below the lower limit!') + '</small>';
+    (inRange ? '— within range ✓' : '— WARNING: drops below the lower limit!') +
+    boltInfoHTML(lh, rh, pickN) + '</small>';
   buildTable(existing, existing, pickN);
 }
 
 buildTable(-1, -1, -1);
+buildTable2(-1, -1);
 </script>
 </body>
 </html>
