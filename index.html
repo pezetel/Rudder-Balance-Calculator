@@ -449,7 +449,7 @@ function calculate() {
     const maxRed = rowArr[rowArr.length - 1];
     verdict.className = 'verdict bad';
     verdict.innerHTML = 'OUT OF LIMITS (high) — Total ' + fmt(total) +
-      '<small>Required reduction <b>' + fmt(required) + '</b> cannot be achieved with the max weight addable ' +
+      '<small>Required minimum reduction <b>' + fmt(required) + '</b> cannot be achieved with the max weight addable ' +
       'in this row (n=' + rowArr.length + ', reduction ' + fmt(maxRed) + '). ' +
       'The existing + added ≤ ' + MAX_TOTAL + ' limit would be exceeded.</small>';
     buildTable(existing, -1, -1);
@@ -462,7 +462,7 @@ function calculate() {
 
   verdict.className = inRange ? 'verdict ok' : 'verdict warn';
   verdict.innerHTML = 'OUT OF LIMITS (high) — Total ' + fmt(total) +
-    '<small>Required reduction: <b>' + fmt(required) + '</b><br>' +
+    '<small>Required minimum reduction: <b>' + fmt(required) + '</b><br>' +
     'Existing weight row: <b>' + existing + '</b> → Weight to add (n): <b>' + pickN + ' pcs</b> ' +
     '(173A5300-1)<br>Reduction achieved: <b>' + fmt(reduction) + '</b> (ΔM = −' + fmt(reduction) + ')<br>' +
     'New Total moment: <b>' + fmt(newTotal) + '</b> ' +
